@@ -6,7 +6,7 @@ def make_channels_list(channels: list) -> str:
     matn += "➖➖➖➖➖➖➖➖➖➖\n"
     
     for i, channel in enumerate(channels, 1):
-        title = escape(channel[1])
+        title = escape(channel[1] or '')
         channel_id = channel[2]
         link = channel[3]
         id_link = f"https://t.me/c/{str(channel_id).replace('-100', '')}/1"
@@ -22,7 +22,7 @@ def make_admins_list(admins: list) -> str:
     matn += "➖➖➖➖➖➖➖➖➖➖\n"
     
     for i, admin in enumerate(admins, 1):
-        full_name = escape(admin[1])
+        full_name = escape(admin[1] or ' ')
         admin_id = admin[2]
 
         matn += f"{i}. <a href='tg://user?id={admin_id}'>{full_name}</a>\n"

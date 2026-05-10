@@ -162,7 +162,10 @@ async def send_results(message: Message):
 async def send_profile(message: Message):
     user = await db.get_user(message.from_user.id)
     res_count = await db.get_user_results_count(message.from_user.id)
-    joined_date = user[3].split(' ')[0]
+
+    joined_date = "None"
+    if user[3]:
+        joined_date = user[3].split(' ')[0]
     
     text = (
         f"👤 <b>Sizning profilingiz</b>\n\n"
