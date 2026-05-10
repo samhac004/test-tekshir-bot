@@ -1,12 +1,12 @@
 import re
-from datetime import datetime
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
+from aiogram.filters import StateFilter
 
 from states import CheckTest, ReNameUser
 from data.loader import db
-from keyboards import update_name, user_menu, back_btn
+from keyboards import update_name, user_menu, back_btn, back_btn_reply, user_menu
 
 rt = Router()
 
@@ -18,7 +18,8 @@ async def ask_test_code(message: Message, state: FSMContext):
         "<b>✅ Javobni tekshirish</b>\n\n"
         "Test javoblaringizni namunadagi kabi yuboring:\n\n"
         "<i>test_kodi*abcd...</i>\n\n"
-        "<b>Namuna:</b> <i>125*abcdba</i>"
+        "<b>Namuna:</b> <i>7*abcdba</i>",
+        reply_markup=back_btn_reply
     )
     await state.set_state(CheckTest.answers)
 
@@ -29,72 +30,118 @@ async def ask_test_code_(call: CallbackQuery, state: FSMContext):
         "<b>✅ Javobni tekshirish</b>\n\n"
         "Test javoblaringizni namunadagi kabi yuboring:\n\n"
         "<i>test_kodi*abcd...</i>\n\n"
-        "<b>Namuna:</b> <i>125*abcdba</i>"
+        "<b>Namuna:</b> <i>125*abcdba</i>",
+        reply_markup=back_btn_reply
     )
     await state.set_state(CheckTest.answers)
 
+@rt.message(F.text == "↩️ Orqaga", StateFilter(CheckTest.answers, CheckTest.answers2))
+async def back_to_user_menu(message: Message, state: FSMContext):
+    await message.answer(
+        "<b>Javobni tekshirish</b> bekor qilindi.", reply_markup=user_menu)
+    await state.clear()
 
-@rt.message(F.text, CheckTest.answers)
-async def get_answers(message: Message, state: FSMContext):
-    if message.text in ["📊 Natijalarim", "👤 Profile", "ℹ️ Bot haqida", "✅ Javobni tekshirish"]:
-        await state.clear()
-        await message.answer("✅ Javobni tekshirish amali bekor qilindi.", reply_markup=user_menu)
-        return
 
-    msg = message.text.strip().lower()
-    
-    if "*" not in msg:
-        await message.answer("❌ <b>Xato format!</b>\nNamuna: <i>123*abcd</i>")
-        return
-
-    try:
-        test_code_str, user_ans_raw = msg.split("*", 1)
-        test_code = int(test_code_str)
-    except ValueError:
-        await message.answer("❌ <b>Test kodi faqat raqamlardan iborat bo'lishi kerak!</b>")
-        return
-
-    test = await db.get_test(test_code)
-    if not test:
-        await message.answer("❌ <b>Test topilmadi!</b>")
-        return
-
-    if test[4] == 'waiting':
-        await message.answer("⚠️ <b>Kechirasiz, test hali boshlanmagan.</b>")
-        return
-    if test[4] == 'closed':
-        await message.answer("⚠️ <b>Kechirasiz, test yakunlangan.</b>")
-        return
-
-    already_done = await db.check_user_finished(message.from_user.id, test[0])
-    if already_done:
-        await message.answer("🚫 <b>Siz bu testni topshirib bo'lgansiz!</b>")
-        await state.clear()
-        return
-
+async def process_test_checking(message: Message, state: FSMContext, test, user_ans_raw: str):
     correct_ans = "".join(re.findall(r'[a-z]', test[2].lower()))
-    user_ans = "".join(re.findall(r'[a-z]', user_ans_raw))
+    user_ans = "".join(re.findall(r'[a-z]', user_ans_raw.lower()))
 
     total = len(correct_ans)
     correct = 0
 
     for i in range(total):
-        u_a = user_ans[i] if i < len(user_ans) else "?"
-        if i < len(user_ans) and u_a == correct_ans[i]:
+        if i < len(user_ans) and user_ans[i] == correct_ans[i]:
             correct += 1
 
-    percentage = (correct / total) * 100
+    percentage = (correct / total) * 100 if total > 0 else 0
 
-    await db.add_result(message.from_user.id, test[0], f"{correct}/{total}", int(percentage))
+    already_done = await db.check_user_finished(message.from_user.id, test[0])
+    if already_done:
+        await db.update_result(message.from_user.id, test[0], f"{correct}/{total}", int(percentage))
+    else:
+        await db.add_result(message.from_user.id, test[0], f"{correct}/{total}", int(percentage))
 
     await message.answer(
         f"🏁 <b>Sizning natijangiz:</b>\n\n"
         f"📝 <b>Test:</b> {test[1]}\n"
         f"✅ <b>To'g'ri:</b> {correct} ta\n"
         f"❌ <b>Xato:</b> {total - correct} ta\n"
-        f"📊 <b>Foiz:</b> {int(percentage)}%\n\n"
+        f"📊 <b>Foiz:</b> {int(percentage)}%\n\n",
+        reply_markup=user_menu
     )
     await state.clear()
+
+@rt.message(F.text, CheckTest.answers)
+async def get_answers_step1(message: Message, state: FSMContext):
+    if message.text in ["📊 Natijalarim", "👤 Profile", "ℹ️ Bot haqida", "✅ Javobni tekshirish"]:
+        await state.clear()
+        await message.answer("Amal bekor qilindi.", reply_markup=user_menu)
+        return
+
+    msg = message.text.strip().lower()
+
+    if msg.isdigit():
+        test_code = int(msg)
+        user_ans_raw = ''
+    elif "*" in msg:
+        try:
+            test_code_str, user_ans_raw = msg.split("*", 1)
+            test_code = int(test_code_str)
+        except ValueError:
+            await message.answer("❌ <b>Test kodini tekshirib qaytadan yuboring!</b>\n<i>Test kodi faqat raqamlardan iborat bo'lishi kerak!</i>")
+            return
+    else:
+        await message.answer("❌ <b>Xato format!</b>\n<i>Iltimos namunadagi kabi yuboring</i>\n<b>Namuna:</b> <i>7*abcd</i>")
+        return
+
+    test = await db.get_test(test_code)
+    if not test:
+        await message.answer(f"❌ <b>Test topilmadi!</b>\n<i>Iltimos test kodini tekshirib qaytadan yuboring!</i>")
+        return
+
+    # Holatni tekshirish
+    if test[3] == 'waiting':
+        await message.answer("⚠️ <b>Kechirasiz, test hali boshlanmagan.</b>", reply_markup=user_menu)
+        await state.clear()
+        return
+    if test[3] == 'closed':
+        await message.answer("⚠️ <b>Kechirasiz, test yakunlangan.</b>", reply_markup=user_menu)
+        await state.clear()
+        return
+
+    # Agar faqat kod bo'lsa, ikkinchi bosqichga o'tamiz
+    if not user_ans_raw:
+        await message.answer(f"✅ <b>Kod qabul qilindi:</b> {test_code}\nJavoblarni yuboring:", reply_markup=back_btn_reply)
+        await state.set_data({"test_code":test_code})
+        await state.set_state(CheckTest.answers2)
+    else:
+        await process_test_checking(message, state, test, user_ans_raw)
+
+
+@rt.message(F.text, CheckTest.answers2)
+async def get_answers(message: Message, state: FSMContext):
+    if message.text in ["📊 Natijalarim", "👤 Profile", "ℹ️ Bot haqida", "✅ Javobni tekshirish"]:
+        await state.clear()
+        await message.answer("✅ Javobni tekshirish amali bekor qilindi.", reply_markup=user_menu)
+        return
+
+    user_ans_raw = message.text.strip().lower()
+    data = await state.get_data()
+    test_code = data.get("test_code", 10000)
+
+    test = await db.get_test(test_code)
+    if not test:
+        await message.answer(f"❌ <b>Test topilmadi!</b>\n<i>Iltimos test kodini tekshirib qaytadan yuboring!</i>")
+        return
+    
+    if test[3] == 'waiting':
+        await message.answer("⚠️ <b>Kechirasiz, test hali boshlanmagan.</b>")
+        return
+    if test[3] == 'closed':
+        await message.answer("⚠️ <b>Kechirasiz, test yakunlandi. Siz kech qoldingiz.</b>")
+        return
+
+    await process_test_checking(message, state, test, message.text)
 
 
 @rt.message(F.text == "📊 Natijalarim")

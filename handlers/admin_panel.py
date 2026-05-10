@@ -66,12 +66,12 @@ async def show_test_details(message: Message):
         return
     sana = test[5].split(' ')[0]
     vaqt = test[5].split(' ')[1]
-    results = await db.get_results(int(test_id))
+    results = await db.get_results_with_ids(int(test_id))
     participants_count = len(results)
 
     total_percentage = 0
     if participants_count > 0:
-        total_percentage = sum(row[2] for row in results) / participants_count
+        total_percentage = sum(row[3] for row in results) / participants_count
 
     user = await db.get_user(message.from_user.id)
 
@@ -92,11 +92,11 @@ async def show_test_details(message: Message):
         matn = make_results_list(results)
         text = (
             f"📋 <b>Test ma'lumotlari</b>\n\n"
-            f"<b>Nomi:</b> {test_title}\n"
-            f"<b>Kodi:</b> <code>{test_code}</code>\n"
+            f"<b>✍️ Nomi:</b> {test_title}\n"
+            f"<b>🔢 Test kodi:</b> <code>{test_code}</code>\n"
             f"<b>👥 Qatnashganlar:</b> {participants_count} ta\n"
-            f"<b>Holati:</b> Boshlangan\n\n"
-            f"<b>Natijalar:</b>\n"
+            f"<b>⏳ Holati:</b> Boshlangan\n\n"
+            f"<b>📊 Natijalar:</b>\n"
             f"---------------------\n"
             f"{matn}"
         )
@@ -104,11 +104,11 @@ async def show_test_details(message: Message):
     elif status == "closed":
         text = (
             f"📋 <b>Test ma'lumotlari</b>\n\n"
-            f"<b>Nomi:</b> {test_title}\n"
-            f"<b>Kodi:</b> <code>{test_code}</code>\n"
+            f"<b>✍️ Nomi:</b> {test_title}\n"
+            f"<b>🔢 Kodi:</b> <code>{test_code}</code>\n"
             f"<b>👥 Qatnashganlar:</b> {participants_count} ta\n"
             f"<b>📊 Umumiy o'rtacha natija:</b> {total_percentage:.1f}%\n\n"
-            f"<b>Holati:</b> Yakunlangan"
+            f"<b>⏳ Holati:</b> Yakunlangan"
         )
         await message.answer(text, reply_markup=del_test(test_code))
         # await message.answer(text, reply_markup=test_refresh_start_btn(test_code))
@@ -134,7 +134,7 @@ async def admin_statistics(message: Message):
     
     tashkent_tz = pytz.timezone('Asia/Tashkent')
     now = datetime.now(tashkent_tz)
-    sana = now.strftime("%d.%m.%Y")
+    vaqt = now.strftime("%d.%m.%Y %H:%M:%S") 
 
     text = (
         "<b>📈 Botning umumiy statistikasi</b>\n\n"
@@ -143,7 +143,7 @@ async def admin_statistics(message: Message):
         f"👨‍💻 <b>Adminlar:</b> {admins_count} ta\n"
         f"📢 <b>Majburiy kanallar:</b> {channels_count} ta\n\n"
         "----------------------------------\n"
-        f"<i>🕒 Yangilangan vaqt: {sana}</i>"
+        f"<i>🕒 Yangilangan vaqt: {vaqt}</i>"
     )
     
     user_id = message.from_user.id
@@ -174,7 +174,7 @@ async def send_broadcast(message: Message, state: FSMContext):
         except Exception:
             continue
             
-    await message.answer(f"✅ Xabar {count} ta foydalanuvchiga yuborildi.")
+    await message.answer(f"✅ Xabar {count} ta foydalanuvchiga yuborildi.", reply_markup=ownerMenu(message.from_user.id))
     await state.clear()
 
 

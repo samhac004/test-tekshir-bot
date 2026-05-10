@@ -1,10 +1,14 @@
+import os
 import aiosqlite as sq
-# from data.config import DATABASE
+from data.config import DATABASE
 
 
 class Database:
     def __init__(self, db_path):
         self.db_path = db_path
+
+        if os.path.dirname(self.db_path):
+            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
 
     async def db_start(self):
         async with sq.connect(self.db_path) as db:
@@ -44,7 +48,7 @@ class Database:
                             invite_link TEXT
                             );""")
 
-    # Userlarni boshqarish
+    # User larni boshqarish
     async def add_user(self, tg_id: int, full_name: str | None, role='user'):
         async with sq.connect(self.db_path) as db:
             await db.execute(
@@ -155,14 +159,6 @@ class Database:
 
                 
     # Natija
-    async def save_result(self, user_id: int, test_id: int, result: str, percentage: float):
-        async with sq.connect(self.db_path) as db:
-            await db.execute("""
-                INSERT INTO results (user_id, test_id, result, percentage) 
-                VALUES (?, ?, ?, ?)
-            """, (user_id, test_id, result, percentage))
-            await db.commit()
-    
     async def get_results(self, test_id: int):
         async with sq.connect(self.db_path) as db:
             cursor = await db.execute("""
@@ -182,7 +178,7 @@ class Database:
         
     async def check_user_finished(self, user_id, test_id):
         async with sq.connect(self.db_path) as db:
-            cursor = await db.execute("SELECT id FROM results WHERE user_id = ? AND test_id = ?", (user_id, test_id))
+            cursor = await db.execute("SELECT id, percentage FROM results WHERE user_id = ? AND test_id = ?", (user_id, test_id))
             return await cursor.fetchone()
 
     async def get_user_results(self, user_id):
@@ -202,13 +198,31 @@ class Database:
             res = await cursor.fetchone()
             return res[0] if res else 0
         
-    async def add_result(self, user_id: int, test_id: int, result: str, percentage: float):
+    async def add_result(self, user_id: int, test_id: int, result: str, percentage: int):
         async with sq.connect(self.db_path) as db:
             await db.execute("""
                 INSERT INTO results (user_id, test_id, result, percentage)
                 VALUES (?, ?, ?, ?)
             """, (user_id, test_id, result, percentage))
             await db.commit()
+
+    async def update_result(self, user_id: int, test_id: int, result: str, percentage: int):
+        async with sq.connect(self.db_path) as db:
+            await db.execute("""
+                UPDATE results SET result = ?, percentage = ?, created_at = CURRENT_TIMESTAMP WHERE user_id = ? AND test_id = ?
+            """, (result, percentage, user_id, test_id))
+            await db.commit()
+
+    async def get_results_with_ids(self, test_id: int):
+        async with sq.connect(self.db_path) as db:
+            cursor = await db.execute("""
+                SELECT users.tg_id, users.full_name, results.result, results.percentage
+                FROM results
+                JOIN users ON results.user_id = users.tg_id
+                WHERE results.test_id = ?
+                ORDER BY results.percentage DESC
+            """, (test_id,))
+            return await cursor.fetchall()
 
 
     # Kanallar

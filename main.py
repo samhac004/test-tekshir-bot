@@ -40,14 +40,20 @@ async def main():
     dp.message.outer_middleware(SubscriptionMiddleware())
     dp.callback_query.outer_middleware(SubscriptionMiddleware())
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode = ParseMode.HTML), link_preview_is_disabled=True)
-    await dp.start_polling(bot)
-
+    
     await bot.set_my_commands(
         commands=[
             BotCommand(command="start", description="Botni qayta ishga tushirish")
         ],
         scope=BotCommandScopeDefault()
     )
+    
+    await bot.delete_webhook(drop_pending_updates=True)
+    
+    try:
+        await dp.start_polling(bot)
+    finally:
+        await bot.session.close() # Sessiyani yopish juda muhim!
 
 
 if __name__=="__main__":
