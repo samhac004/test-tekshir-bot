@@ -1,6 +1,6 @@
 import os
 import aiosqlite as sq
-from data.config import DATABASE
+from config.config import DATABASE
 
 
 class Database:

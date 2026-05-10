@@ -10,7 +10,7 @@ from aiogram.filters import StateFilter
 from keyboards import back_btn_reply, test_start_btn, currentResults, refresh_current_results, ownerMenu
 from states import CreateTest
 from filters import IsAdmins
-from data.loader import db
+from config.loader import db
 from utils.secondary_funk import make_results_list, format_answers
 
 rt = Router()

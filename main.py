@@ -7,9 +7,9 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand, BotCommandScopeDefault
 
-from data.config import BOT_TOKEN, ADMIN
+from config.config import BOT_TOKEN, ADMIN
 from handlers import router
-from data.loader import db, update_admins_cache, update_channels_cache
+from config.loader import db, update_admins_cache, update_channels_cache
 from middlewares.is_subscription import SubscriptionMiddleware
 
 

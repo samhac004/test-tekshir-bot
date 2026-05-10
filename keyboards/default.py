@@ -1,5 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, KeyboardButtonRequestChat, KeyboardButtonRequestUser
-from data.config import ADMIN
+from config.config import ADMIN
 
 
 # For Users

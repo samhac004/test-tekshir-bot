@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from keyboards import get_tests_pagination_btns, currentResults, test_start_btn, update_name, del_test, ownerMenu, back_btn_reply
 from states import AdminStates
 from filters import IsAdmins
-from data.loader import db
+from config.loader import db
 from utils.secondary_funk import make_results_list
 
 rt = Router()

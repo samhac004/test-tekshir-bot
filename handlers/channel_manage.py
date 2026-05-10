@@ -8,7 +8,7 @@ from aiogram.types import LinkPreviewOptions
 from keyboards import ownerMenu, back_btn, get_channel, channelsMenu, channelsListBtn, checkerDelBtn
 from states import AddChannel, DelChannel
 from filters import IsOwner
-from data.loader import db, update_channels_cache
+from config.loader import db, update_channels_cache
 from utils.secondary_funk import make_channels_list
 
 

@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import StateFilter
 
 from states import CheckTest, ReNameUser
-from data.loader import db
+from config.loader import db
 from keyboards import update_name, user_menu, back_btn, back_btn_reply, user_menu
 
 rt = Router()

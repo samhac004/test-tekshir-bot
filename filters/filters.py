@@ -1,8 +1,8 @@
 from aiogram.filters import BaseFilter
 from aiogram.types import Message
 
-from data.config import ADMIN
-from data import loader
+from config.config import ADMIN
+from config import loader
 
 
 class IsDigitMessage(BaseFilter):

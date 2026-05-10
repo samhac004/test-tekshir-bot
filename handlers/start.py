@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 
 from keyboards import user_menu, admin_menu, ownerMenu
 from states import RegisterState
-from data.loader import db
+from config.loader import db
 
 rt = Router()
 

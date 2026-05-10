@@ -3,8 +3,8 @@ from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from typing import Callable, Awaitable, Dict, Any, Union
-from data.loader import db, update_channels_cache
-import data.loader as loader
+from config.loader import db, update_channels_cache
+import config.loader as loader
 
 class SubscriptionMiddleware(BaseMiddleware):      
     async def __call__(

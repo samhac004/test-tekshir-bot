@@ -5,10 +5,9 @@ from aiogram.fsm.context import FSMContext
 from keyboards import ownerMenu, adminsMenu, back_btn, get_admin_btn, checkerDelBtn, adminsListBtn
 from states import AddAdmin, DelAdmin
 from filters import IsOwner
-from data.loader import db
+from config.loader import db, update_admins_cache
 from utils.secondary_funk import make_admins_list
-from data.config import ADMIN
-from data.loader import update_admins_cache
+from config.config import ADMIN
 
 
 rt = Router()
